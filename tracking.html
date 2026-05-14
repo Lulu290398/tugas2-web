@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tracking Delivery Order</title>
+
+  <!-- Vue 2 -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+
+  <style>
+    /* ===== RESET & BASE ===== */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+      color: #333;
+    }
+
+    /* ===== CONTAINER ===== */
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      background: #fff;
+      padding: 24px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    /* ===== HEADER ===== */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-icon {
+      background: #2563eb;
+      padding: 10px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-icon svg {
+      width: 28px;
+      height: 28px;
+      color: #fff;
+      stroke: #fff;
+    }
+
+    .header-left h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .header-left p {
+      font-size: 13px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #fff;
+      color: #475569;
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-back:hover { background: #f8fafc; }
+
+    /* ===== SECTION CARD ===== */
+    .section-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .section-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+
+    .section-card-header h2 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .section-card-header span {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .section-card-body {
+      padding: 20px;
+    }
+
+    /* ===== TABEL ===== */
+    .table-wrapper { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead tr {
+      background: #f8fafc;
+    }
+
+    thead th {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid #e2e8f0;
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #f1f5f9;
+      transition: background 0.15s;
+    }
+
+    tbody tr:hover { background: #eff6ff; }
+
+    tbody td {
+      padding: 12px 16px;
+      color: #334155;
+      vertical-align: top;
+    }
+
+    .td-do     { font-weight: 600; color: #2563eb; white-space: nowrap; }
+    .td-nim    { font-family: monospace; color: #475569; white-space: nowrap; }
+    .td-nama   { font-weight: 500; color: #1e293b; white-space: nowrap; }
+    .td-nowrap { white-space: nowrap; color: #64748b; }
+
+    /* Empty state */
+    .empty-row td {
+      text-align: center;
+      padding: 32px;
+      color: #94a3b8;
+      font-size: 13px;
+    }
+
+    /* ===== STATUS BADGE ===== */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .badge-green  { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+    .badge-amber  { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+    .badge-red    { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .badge-blue   { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+
+    .dot-green { background: #10b981; }
+    .dot-amber { background: #f59e0b; }
+    .dot-red   { background: #ef4444; }
+    .dot-blue  { background: #3b82f6; }
+
+    /* ===== RIWAYAT ===== */
+    .riwayat-list { list-style: none; padding: 0; }
+    .riwayat-list li {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 4px;
+      font-size: 12px;
+    }
+    .riwayat-waktu { color: #94a3b8; white-space: nowrap; }
+    .riwayat-ket   { color: #475569; }
+
+    /* ===== TABLE FOOTER ===== */
+    .table-footer {
+      padding: 12px 20px;
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    /* ===== FORM SECTION ===== */
+    .form-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .form-header-icon {
+      background: #059669;
+      padding: 7px;
+      border-radius: 6px;
+      display: flex;
+    }
+
+    .form-header-icon svg {
+      width: 18px;
+      height: 18px;
+      stroke: #fff;
+    }
+
+    .form-header h2 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    /* Grid form */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .page-header { flex-direction: column; align-items: flex-start; }
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+    .form-group label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .form-group input,
+    .form-group select {
+      padding: 8px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #1e293b;
+      background: #fff;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    }
+
+    .form-group input[readonly] {
+      background: #f1f5f9;
+      color: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    /* Detail paket */
+    .paket-detail {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+    }
+
+    .paket-detail h4 {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1d4ed8;
+      margin-bottom: 8px;
+    }
+
+    .paket-detail ul {
+      list-style: disc;
+      padding-left: 18px;
+      font-size: 13px;
+      color: #1d4ed8;
+      margin-bottom: 8px;
+    }
+
+    .paket-detail p {
+      font-size: 13px;
+      font-weight: 500;
+      color: #1d4ed8;
+    }
+
+    /* Tombol submit */
+    .btn-submit {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 20px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 4px;
+    }
+
+    .btn-submit:hover { background: #1d4ed8; }
+
+    .btn-submit svg {
+      width: 16px;
+      height: 16px;
+      stroke: #fff;
+    }
+
+    /* Pesan error */
+    .error-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff1f2;
+      border: 1px solid #fecdd3;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-top: 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #be123c;
+    }
+
+    .error-box svg {
+      width: 16px;
+      height: 16px;
+      stroke: #be123c;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<div id="app" class="container">
+
+  <!-- ===== HEADER ===== -->
+  <header class="page-header">
+    <div class="header-left">
+      <div class="header-icon">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l1.293 1.293A1 1 0 005 18h1m0-6h8m-8 0V6m8 10h2a1 1 0 001-1v-3.586a1 1 0 00-.293-.707l-2.414-2.414A1 1 0 0016 8h-3"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Tracking Delivery Order</h1>
+        <p>Manajemen dan pemantauan pengiriman bahan ajar</p>
+      </div>
+    </div>
+    <a href="index.html" class="btn-back">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+      Kembali
+    </a>
+  </header>
+
+  <!-- ===== TABEL DAFTAR DO ===== -->
+  <div class="section-card">
+    <div class="section-card-header">
+      <h2>Daftar Delivery Order</h2>
+      <span>Total: {{ Object.keys(tracking).length }} DO</span>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Nomor DO</th>
+            <th>NIM</th>
+            <th>Nama</th>
+            <th>Ekspedisi</th>
+            <th>Paket</th>
+            <th>Tanggal Kirim</th>
+            <th>Total Harga</th>
+            <th>Status</th>
+            <th>Riwayat Perjalanan</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          <!-- v-if: belum ada data -->
+          <tr class="empty-row" v-if="Object.keys(tracking).length === 0">
+            <td colspan="9">Belum ada Delivery Order.</td>
+          </tr>
+
+          <!-- v-for pada object tracking -->
+          <tr v-for="(item, kode) in tracking" :key="kode">
+            <td class="td-do">{{ kode }}</td>
+            <td class="td-nim">{{ item.nim }}</td>
+            <td class="td-nama">{{ item.nama }}</td>
+            <td class="td-nowrap">{{ item.ekspedisi }}</td>
+            <td class="td-nowrap">{{ item.paket }}</td>
+            <td class="td-nowrap">{{ item.tanggalKirim }}</td>
+            <td class="td-nowrap">{{ formatRupiah(item.total) }}</td>
+
+            <!-- Status dengan v-if / v-else-if / v-else -->
+            <td>
+              <span class="badge badge-green" v-if="item.status === 'Terkirim'">
+                <span class="badge-dot dot-green"></span>{{ item.status }}
+              </span>
+              <span class="badge badge-amber" v-else-if="item.status === 'Dalam Perjalanan'">
+                <span class="badge-dot dot-amber"></span>{{ item.status }}
+              </span>
+              <span class="badge badge-red" v-else-if="item.status === 'Gagal'">
+                <span class="badge-dot dot-red"></span>{{ item.status }}
+              </span>
+              <span class="badge badge-blue" v-else>
+                <span class="badge-dot dot-blue"></span>{{ item.status }}
+              </span>
+            </td>
+
+            <!-- Riwayat perjalanan -->
+            <td>
+              <ul class="riwayat-list">
+                <li v-for="(p, i) in item.perjalanan" :key="i">
+                  <span class="riwayat-waktu">{{ p.waktu }}</span>
+                  <span class="riwayat-ket">— {{ p.keterangan }}</span>
+                </li>
+              </ul>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-footer">
+      Menampilkan {{ Object.keys(tracking).length }} Delivery Order
+    </div>
+  </div>
+
+  <!-- ===== FORM TAMBAH DO ===== -->
+  <div class="section-card">
+    <div class="section-card-body">
+
+      <div class="form-header">
+        <div class="form-header-icon">
+          <svg fill="none" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+        </div>
+        <h2>Tambah Delivery Order Baru</h2>
+      </div>
+
+      <!-- Baris 1: Nomor DO + NIM + Nama -->
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nomor DO (Otomatis)</label>
+          <input type="text" v-model="form.nomorDO" readonly>
+        </div>
+        <div class="form-group">
+          <label>NIM</label>
+          <input type="text" v-model="form.nim" placeholder="Minimal 9 digit" maxlength="15">
+        </div>
+        <div class="form-group">
+          <label>Nama Lengkap</label>
+          <input type="text" v-model="form.nama" placeholder="Nama mahasiswa">
+        </div>
+      </div>
+
+      <!-- Baris 2: Ekspedisi + Paket + Tanggal Kirim -->
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Ekspedisi</label>
+          <select v-model="form.ekspedisi">
+            <option value="">Pilih Ekspedisi</option>
+            <option v-for="e in pengirimanList" :key="e.kode" :value="e.nama">{{ e.nama }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Paket Bahan Ajar</label>
+          <select v-model="selectedPaket">
+            <option value="">Pilih Paket</option>
+            <option v-for="p in paket" :key="p.kode" :value="p.kode">{{ p.kode }} — {{ p.nama }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tanggal Kirim</label>
+          <input type="date" v-model="form.tanggalKirim">
+        </div>
+      </div>
+
+      <!-- Detail isi paket: v-if muncul setelah paket dipilih -->
+      <div class="paket-detail" v-if="detailPaket">
+        <h4>📚 Isi Paket: {{ detailPaket.nama }}</h4>
+        <ul>
+          <li v-for="(isi, i) in detailPaket.isi" :key="i">{{ isi }}</li>
+        </ul>
+        <p>Harga: {{ formatRupiah(detailPaket.harga) }}</p>
+      </div>
+
+      <!-- Baris 3: Total Harga + Tombol -->
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Total Harga (Otomatis)</label>
+          <input type="text" :value="formatRupiah(form.total)" readonly>
+        </div>
+        <div class="form-group" style="justify-content:flex-end;">
+          <label>&nbsp;</label>
+          <button class="btn-submit" @click="tambahTracking">
+            <svg fill="none" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0zM13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10"/>
+            </svg>
+            Tambah Delivery Order
+          </button>
+        </div>
+      </div>
+
+      <!-- Pesan error -->
+      <div class="error-box" v-if="errorMessage">
+        <svg fill="none" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        {{ errorMessage }}
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- Script: load shared data dulu, baru Vue instance -->
+<script src="js/dataBahanAjar.js"></script>
+<script src="js/tracking-app.js"></script>
+
+</body>
+</html>
