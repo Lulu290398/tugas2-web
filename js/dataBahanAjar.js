@@ -62,7 +62,7 @@ var stokAwal = [
 ];
 
 var trackingAwal = {
-  "DO2025-0001": {
+  "DO2025-001": {
     nim: "123456789",
     nama: "Rina Wulandari",
     status: "Dalam Perjalanan",

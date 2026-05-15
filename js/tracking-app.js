@@ -36,7 +36,7 @@ new Vue({
     generateDO: function() {
       var tahun = new Date().getFullYear();
       var jumlah = Object.keys(this.tracking).length + 1;
-      var nomor = String(jumlah).padStart(4, '0');
+      var nomor = String(jumlah).padStart(3, '0');
       return 'DO' + tahun + '-' + nomor;
     },
 
